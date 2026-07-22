@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Briefcase, Laptop } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export const RoleSelectionPage: React.FC = () => {
+  usePageTitle('Choose Your Role');
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<'freelancer' | 'client' | null>(null);
 
@@ -19,7 +21,7 @@ export const RoleSelectionPage: React.FC = () => {
       <div className="w-full bg-white py-4 px-6 border-b border-gray-200">
         <div className="max-w-4xl mx-auto">
           <Link to="/" className="text-2xl font-bold text-gray-900">
-            GrowTogether
+            OpenWork
           </Link>
         </div>
       </div>

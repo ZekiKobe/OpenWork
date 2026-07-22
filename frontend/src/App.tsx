@@ -3,8 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Navbar } from './components/common/Navbar';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 import { scrollToTop } from './utils/smoothScroll';
+import type { UserRole } from './types/index';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -16,11 +18,9 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AdminPanelPage } from './pages/AdminPanelPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { RulesPage } from './pages/RulesPage';
-import MarketplacePage from './pages/MarketplacePage';
 import CreateGigPage from './pages/CreateGigPage';
 import JobsPage from './pages/JobsPage';
 import MessagesPage from './pages/MessagesPage';
-import TalentPage from './pages/TalentPage';
 import MyPostedJobsPage from './pages/MyPostedJobsPage';
 import MyContractsPage from './pages/MyContractsPage';
 import FreelancerGigsPage from './pages/FreelancerGigsPage';
@@ -53,11 +53,19 @@ import { MyJobsPage } from './pages/MyJobsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { AllPostsPage } from './pages/AllPostsPage';
 import { GigDetailPage } from './pages/GigDetailPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 
 // Protected Route component
-const ProtectedRoute: React.FC<{ children: React.ReactNode; requireAuth?: boolean }> = ({
+const ProtectedRoute: React.FC<{
+  children: React.ReactNode;
+  requireAuth?: boolean;
+  requireRole?: UserRole | UserRole[];
+}> = ({
   children,
-  requireAuth = true
+  requireAuth = true,
+  requireRole
 }) => {
   const { user, loading } = useAuth();
 
@@ -71,6 +79,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireAuth?: boolea
 
   if (requireAuth && !user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requireRole && user) {
+    const allowedRoles = Array.isArray(requireRole) ? requireRole : [requireRole];
+    if (!allowedRoles.includes(user.role)) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   if (!requireAuth && user) {
@@ -108,8 +123,15 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-green-700 focus:rounded focus:shadow-lg focus:ring-2 focus:ring-green-500"
+      >
+        Skip to main content
+      </a>
       {!isAuthPage && !isAdminPage && <Navbar />}
-      <main className="page-transition">
+      <main id="main-content" className="page-transition">
+        <ErrorBoundary>
         <Routes>
           {/* Public routes */}
           <Route 
@@ -121,6 +143,8 @@ function AppContent() {
             } 
           />
           <Route path="/rules" element={<RulesPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/posts" element={<AllPostsPage />} />
           <Route path="/users/:username" element={<ProfilePage />} />
@@ -191,7 +215,7 @@ function AppContent() {
           <Route
             path="/marketplace/create-gig"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole="freelancer">
                 <CreateGigPage />
               </ProtectedRoute>
             }
@@ -199,7 +223,7 @@ function AppContent() {
           <Route
             path="/jobs/create"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole="client">
                 <CreateJobPage />
               </ProtectedRoute>
             }
@@ -402,8 +426,9 @@ function AppContent() {
           />
 
           {/* 404 route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </ErrorBoundary>
       </main>
     </div>
   );
@@ -415,6 +440,7 @@ function App() {
       <Router>
         <ToastProvider>
           <AppContent />
+          <Toaster position="top-right" />
         </ToastProvider>
       </Router>
     </AuthProvider>

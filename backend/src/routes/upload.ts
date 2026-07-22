@@ -1,10 +1,9 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
-import { uploadMultiple, uploadSingle } from '../middleware/upload';
+import { uploadMultiple, uploadSingle, getUploadedFileUrl } from '../middleware/upload';
 
 const router = express.Router();
 
-// Upload single image
 router.post('/image', authenticate, uploadSingle, (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -15,13 +14,12 @@ router.post('/image', authenticate, uploadSingle, (req: Request, res: Response) 
       return;
     }
 
-    // Return the file URL
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
+    const fileUrl = getUploadedFileUrl(req.file);
+
     res.status(200).json({
       success: true,
       url: fileUrl,
-      filename: req.file.filename
+      filename: (req.file as any).key || req.file.filename
     });
   } catch (error: any) {
     console.error('Error uploading image:', error);
@@ -32,7 +30,6 @@ router.post('/image', authenticate, uploadSingle, (req: Request, res: Response) 
   }
 });
 
-// Upload multiple images
 router.post('/images', authenticate, uploadMultiple, (req: Request, res: Response) => {
   try {
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
@@ -43,9 +40,8 @@ router.post('/images', authenticate, uploadMultiple, (req: Request, res: Respons
       return;
     }
 
-    // Return array of file URLs
-    const fileUrls = req.files.map(file => `/uploads/${file.filename}`);
-    
+    const fileUrls = req.files.map((file) => getUploadedFileUrl(file));
+
     res.status(200).json({
       success: true,
       urls: fileUrls,

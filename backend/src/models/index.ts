@@ -84,6 +84,8 @@ Contract.hasMany(Message, { foreignKey: 'contract_id', as: 'messages' });
 // Job associations
 Job.belongsTo(User, { foreignKey: 'client_id', as: 'client' });
 Job.hasMany(JobApplication, { foreignKey: 'job_id', as: 'applications' });
+Job.hasMany(Contract, { foreignKey: 'job_id', as: 'contracts' });
+Contract.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 
 // JobApplication associations
 JobApplication.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });

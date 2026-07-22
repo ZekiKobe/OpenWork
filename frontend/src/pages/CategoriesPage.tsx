@@ -27,9 +27,12 @@ interface Category {
   description: string;
   icon: React.ComponentType<any>;
   color: string;
-  postCount: number;
+  postCount?: number;
   trending: boolean;
 }
+
+const formatPostCount = (count?: number) =>
+  count != null ? count.toLocaleString() : '—';
 
 export const CategoriesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -42,7 +45,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Frontend, backend, full-stack development and web technologies',
       icon: Code,
       color: 'from-blue-400 to-blue-600',
-      postCount: 1234,
       trending: true
     },
     {
@@ -51,7 +53,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'iOS, Android, React Native, Flutter and mobile app development',
       icon: Smartphone,
       color: 'from-purple-400 to-purple-600',
-      postCount: 856,
       trending: true
     },
     {
@@ -60,7 +61,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'UI/UX, graphic design, branding, and creative work',
       icon: Palette,
       color: 'from-pink-400 to-pink-600',
-      postCount: 945,
       trending: false
     },
     {
@@ -69,7 +69,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Content writing, copywriting, technical writing, and blogging',
       icon: FileText,
       color: 'from-green-400 to-green-600',
-      postCount: 678,
       trending: false
     },
     {
@@ -78,7 +77,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Digital marketing, SEO, social media, and growth strategies',
       icon: TrendingUp,
       color: 'from-orange-400 to-orange-600',
-      postCount: 789,
       trending: true
     },
     {
@@ -87,7 +85,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Machine learning, data analysis, AI, and analytics',
       icon: BarChart3,
       color: 'from-indigo-400 to-indigo-600',
-      postCount: 567,
       trending: true
     },
     {
@@ -96,7 +93,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Business strategy, consulting, and entrepreneurship',
       icon: Briefcase,
       color: 'from-gray-400 to-gray-600',
-      postCount: 432,
       trending: false
     },
     {
@@ -105,7 +101,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Teaching, tutoring, course creation, and mentorship',
       icon: GraduationCap,
       color: 'from-yellow-400 to-yellow-600',
-      postCount: 345,
       trending: false
     },
     {
@@ -114,7 +109,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Video editing, motion graphics, 3D animation, and visual effects',
       icon: Video,
       color: 'from-red-400 to-red-600',
-      postCount: 456,
       trending: false
     },
     {
@@ -123,7 +117,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Music production, audio editing, voice-over, and sound design',
       icon: Music,
       color: 'from-teal-400 to-teal-600',
-      postCount: 234,
       trending: false
     },
     {
@@ -132,7 +125,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Security, penetration testing, ethical hacking, and privacy',
       icon: Shield,
       color: 'from-red-500 to-red-700',
-      postCount: 321,
       trending: false
     },
     {
@@ -141,7 +133,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Blockchain development, cryptocurrency, and Web3',
       icon: Database,
       color: 'from-cyan-400 to-cyan-600',
-      postCount: 289,
       trending: true
     },
     {
@@ -150,7 +141,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Cloud computing, DevOps, networking, and infrastructure',
       icon: Globe,
       color: 'from-sky-400 to-sky-600',
-      postCount: 412,
       trending: false
     },
     {
@@ -159,7 +149,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Product strategy, roadmaps, and product development',
       icon: Lightbulb,
       color: 'from-amber-400 to-amber-600',
-      postCount: 198,
       trending: false
     },
     {
@@ -168,7 +157,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'Social media management, content creation, and community building',
       icon: Megaphone,
       color: 'from-rose-400 to-rose-600',
-      postCount: 534,
       trending: false
     },
     {
@@ -177,7 +165,6 @@ export const CategoriesPage: React.FC = () => {
       description: 'General discussions, Q&A, and community support',
       icon: Users,
       color: 'from-emerald-400 to-emerald-600',
-      postCount: 876,
       trending: false
     }
   ];
@@ -243,7 +230,7 @@ export const CategoriesPage: React.FC = () => {
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-500">
-                              {category.postCount.toLocaleString()} posts
+                              {formatPostCount(category.postCount)} posts
                             </span>
                             <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
                               Trending
@@ -294,7 +281,7 @@ export const CategoriesPage: React.FC = () => {
                             {category.description}
                           </p>
                           <span className="text-sm font-medium text-gray-500">
-                            {category.postCount.toLocaleString()} posts
+                            {formatPostCount(category.postCount)} posts
                           </span>
                         </div>
                       </div>

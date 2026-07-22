@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../ui/Card';
-import { Star, Clock, DollarSign, User, Heart } from 'lucide-react';
+import { Star, Clock, DollarSign, User } from 'lucide-react';
 import type { Gig } from '../../types';
 
 interface GigCardProps {
@@ -70,18 +70,6 @@ export const GigCard: React.FC<GigCardProps> = ({ gig, onContact }) => {
                   }
                 }}
               />
-              {/* Heart Icon - Fiverr Style */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  // TODO: Implement favorite functionality
-                }}
-                className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                aria-label="Save gig"
-              >
-                <Heart className="w-4 h-4 text-gray-600 hover:text-red-500" />
-              </button>
             </div>
           ) : (
             <div className="w-full h-64 bg-gradient-to-br from-green-100 via-green-50 to-green-200 flex items-center justify-center relative">
@@ -91,17 +79,6 @@ export const GigCard: React.FC<GigCardProps> = ({ gig, onContact }) => {
                 </div>
                 <p className="text-xs text-green-600 font-medium">Service</p>
               </div>
-              {/* Heart Icon */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                aria-label="Save gig"
-              >
-                <Heart className="w-4 h-4 text-gray-600 hover:text-red-500" />
-              </button>
             </div>
           )}
         </Link>

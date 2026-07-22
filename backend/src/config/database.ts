@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'GrowTogether_db',
+  process.env.DB_NAME || 'OpenWork_db',
   process.env.DB_USER || 'root',
   process.env.DB_PASSWORD || '',
   {

@@ -14,30 +14,59 @@ export const WalletPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'withdrawals'>('overview');
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawMethod, setWithdrawMethod] = useState('bank_transfer');
   const [withdrawDetails, setWithdrawDetails] = useState({ account_number: '', routing_number: '', account_name: '' });
 
   useEffect(() => {
     loadWalletData();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('deposit') === 'success') {
+      toast.success('Deposit completed successfully');
+    } else if (params.get('deposit') === 'cancelled') {
+      toast.error('Deposit cancelled');
+    }
   }, []);
 
   const loadWalletData = async () => {
     try {
       setLoading(true);
-      const [balanceData, transactionsData, withdrawalsData] = await Promise.all([
+      const [balanceData, transactionsData, withdrawalsData, statusData] = await Promise.all([
         apiService.getWalletBalance(),
         apiService.getTransactionHistory(1, 10),
-        apiService.getWithdrawalHistory(1, 10)
+        apiService.getWithdrawalHistory(1, 10),
+        apiService.getPaymentsStatus().catch(() => ({ paymentsEnabled: false }))
       ]);
 
       setBalance(balanceData);
       setTransactions(transactionsData.transactions || []);
       setWithdrawals(withdrawalsData.withdrawals || []);
+      setPaymentsEnabled(Boolean(statusData.paymentsEnabled) || import.meta.env.VITE_PAYMENTS_ENABLED === 'true');
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to load wallet data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeposit = async () => {
+    try {
+      const amount = parseFloat(depositAmount);
+      if (!amount || amount < 5) {
+        toast.error('Minimum deposit is $5.00');
+        return;
+      }
+      const result = await apiService.createDeposit(amount);
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        toast.error('Deposit session could not be created');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to start deposit');
     }
   };
 
@@ -162,6 +191,20 @@ export const WalletPage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-secondary-900">Quick Actions</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button
+                  onClick={() => {
+                    if (!paymentsEnabled) {
+                      toast.error('Card deposits are disabled until Stripe is configured');
+                      return;
+                    }
+                    setShowDepositModal(true);
+                  }}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <ArrowDownLeft className="w-5 h-5 mr-2" />
+                  Deposit Funds
+                </Button>
                 <Button
                   onClick={() => setShowWithdrawModal(true)}
                   className="w-full"
@@ -297,6 +340,46 @@ export const WalletPage: React.FC = () => {
               </div>
             )}
           </Card>
+        )}
+
+        {/* Deposit Modal */}
+        {showDepositModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="p-6 max-w-md w-full mx-4">
+              <h2 className="text-xl font-semibold text-secondary-900 mb-4">Deposit Funds</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">Amount (USD)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="5"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    className="w-full px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    placeholder="Minimum $5.00"
+                  />
+                </div>
+                <p className="text-sm text-secondary-500">You will be redirected to Stripe Checkout to complete payment.</p>
+                <div className="flex space-x-4 pt-4">
+                  <Button
+                    onClick={handleDeposit}
+                    className="flex-1"
+                    disabled={!depositAmount || parseFloat(depositAmount) < 5}
+                  >
+                    Continue to Stripe
+                  </Button>
+                  <Button
+                    onClick={() => setShowDepositModal(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Withdraw Modal */}

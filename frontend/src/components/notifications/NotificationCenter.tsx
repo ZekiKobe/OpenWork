@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { apiService } from '../../services/api';
+import { getSocket } from '../../services/socket';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -23,6 +24,24 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     if (isOpen) {
       loadNotifications();
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleNotification = () => {
+      if (isOpen) {
+        loadNotifications();
+      } else {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    socket.on('notification', handleNotification);
+    return () => {
+      socket.off('notification', handleNotification);
+    };
   }, [isOpen]);
 
   const loadNotifications = async () => {

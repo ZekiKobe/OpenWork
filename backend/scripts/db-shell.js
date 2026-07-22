@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { execSync, spawn } = require('child_process');
 
-const dbName = process.env.DB_NAME || 'GrowTogether_db';
+const dbName = process.env.DB_NAME || 'OpenWork_db';
 const dbUser = process.env.DB_USER || 'root';
 const dbPassword = process.env.DB_PASSWORD || '';
 const dbHost = process.env.DB_HOST || 'localhost';

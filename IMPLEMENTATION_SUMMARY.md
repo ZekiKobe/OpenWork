@@ -1,4 +1,4 @@
-# GrowTogether Platform - Implementation Summary
+# OpenWork Platform - Implementation Summary
 
 ## ✅ COMPLETED FEATURES
 

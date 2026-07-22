@@ -1,10 +1,12 @@
-import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { Op } from 'sequelize';
 import User, { UserRole, UserStatus } from '../models/User';
 import { generateToken, generateRefreshToken, generateEmailVerificationToken, generatePasswordResetToken } from '../utils/jwt';
 import RefreshToken from '../models/RefreshToken';
 import EmailVerification from '../models/EmailVerification';
 import PasswordReset from '../models/PasswordReset';
+import { EmailService } from './emailService';
 
 export interface RegisterData {
   email: string;
@@ -58,6 +60,36 @@ export interface AuthResponse {
 }
 
 export class AuthService {
+  private static formatAuthUser(user: User): AuthResponse['user'] {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      bio: user.bio,
+      avatar_url: user.avatar_url,
+      title: user.title,
+      company: user.company,
+      location: user.location,
+      website: user.website,
+      skills: user.skills,
+      expertise_areas: user.expertise_areas,
+      years_of_experience: user.years_of_experience,
+      current_role: user.current_role,
+      education_level: user.education_level,
+      field_of_study: user.field_of_study,
+      linkedin_url: user.linkedin_url,
+      github_url: user.github_url,
+      twitter_url: user.twitter_url,
+      is_public_profile: user.is_public_profile,
+      show_email: user.show_email,
+      role: user.role,
+      status: user.status,
+      total_points: user.total_points,
+      email_verified: user.email_verified,
+      created_at: user.created_at
+    };
+  }
+
   static async register(data: RegisterData): Promise<AuthResponse> {
     const { email, password, username, role } = data;
 
@@ -103,8 +135,7 @@ export class AuthService {
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
     });
 
-    // TODO: Send verification email (implement email service)
-    // await EmailService.sendVerificationEmail(user.email, verificationToken);
+    await EmailService.sendVerificationEmail(user.email, verificationToken);
 
     const token = generateToken(user);
     const refreshToken = generateRefreshToken();
@@ -366,8 +397,7 @@ export class AuthService {
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
     });
 
-    // TODO: Send verification email
-    // await EmailService.sendVerificationEmail(user.email, verificationToken);
+    await EmailService.sendVerificationEmail(user.email, verificationToken);
   }
 
   /**
@@ -398,8 +428,7 @@ export class AuthService {
       expires_at: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
     });
 
-    // TODO: Send password reset email
-    // await EmailService.sendPasswordResetEmail(user.email, resetToken);
+    await EmailService.sendPasswordResetEmail(user.email, resetToken);
   }
 
   /**
@@ -439,6 +468,103 @@ export class AuthService {
     await RefreshToken.update(
       { revoked_at: new Date() },
       { where: { token: refreshToken, revoked_at: { [Op.is]: null as any } } }
+    );
+  }
+
+  /**
+   * Google OAuth sign-in via ID token
+   */
+  static async googleLogin(credential: string): Promise<AuthResponse> {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new Error('Google sign-in is not configured');
+    }
+
+    const client = new OAuth2Client(clientId);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: clientId
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+      throw new Error('Invalid Google token');
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    let user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      const baseUsername = (email.split('@')[0] || 'user')
+        .replace(/[^a-zA-Z0-9_]/g, '_')
+        .slice(0, 40) || 'user';
+      let username = baseUsername;
+      let suffix = 1;
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}_${suffix++}`;
+      }
+
+      user = await User.create({
+        email,
+        password_hash: crypto.randomBytes(32).toString('hex'),
+        username,
+        role: UserRole.USER,
+        status: UserStatus.ACTIVE,
+        email_verified: true,
+        avatar_url: payload.picture
+      });
+    } else {
+      if (user.status !== UserStatus.ACTIVE) {
+        throw new Error('Account is suspended');
+      }
+
+      const updates: Partial<{ avatar_url: string; email_verified: boolean }> = {};
+      if (payload.picture && !user.avatar_url) {
+        updates.avatar_url = payload.picture;
+      }
+      if (!user.email_verified) {
+        updates.email_verified = true;
+      }
+      if (Object.keys(updates).length > 0) {
+        await user.update(updates);
+      }
+    }
+
+    const token = generateToken(user);
+    const refreshToken = generateRefreshToken();
+
+    await RefreshToken.create({
+      user_id: user.id,
+      token: refreshToken,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    });
+
+    return {
+      user: this.formatAuthUser(user),
+      token,
+      refreshToken
+    };
+  }
+
+  /**
+   * Change password for authenticated user
+   */
+  static async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isValidPassword = await user.checkPassword(currentPassword);
+    if (!isValidPassword) {
+      throw new Error('Current password is incorrect');
+    }
+
+    await user.update({ password_hash: newPassword });
+
+    await RefreshToken.update(
+      { revoked_at: new Date() },
+      { where: { user_id: user.id, revoked_at: { [Op.is]: null as any } } }
     );
   }
 }

@@ -14,7 +14,7 @@ export class NotificationService {
     link?: string,
     metadata?: Record<string, any>
   ): Promise<Notification> {
-    return await Notification.create({
+    const notification = await Notification.create({
       user_id: userId,
       type,
       title,
@@ -22,6 +22,11 @@ export class NotificationService {
       link,
       metadata
     });
+
+    const { emitToUser } = await import('../realtime/socket');
+    emitToUser(userId, 'notification', notification.toJSON());
+
+    return notification;
   }
 
   /**

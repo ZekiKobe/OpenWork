@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { TrendingUp, FileText, MessageCircle, Heart, Award, Plus, Eye, Users, Briefcase, DollarSign, CheckCircle, Clock, Wallet } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export const DashboardPage: React.FC = () => {
+  usePageTitle('Dashboard');
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [pointsBalance, setPointsBalance] = useState<PointsBalance | null>(null);

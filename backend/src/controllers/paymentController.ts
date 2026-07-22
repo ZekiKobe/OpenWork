@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PaymentService } from '../services/paymentService';
+import { StripePaymentService, isPaymentsEnabled } from '../services/stripePaymentService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { body, validationResult } from 'express-validator';
 
@@ -222,6 +223,52 @@ export class PaymentController {
       console.error('Process withdrawal error:', error);
       res.status(400).json({ error: error.message || 'Failed to process withdrawal' });
     }
+  }
+
+  /**
+   * Create Stripe Checkout session for wallet deposit
+   */
+  static async createDeposit(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { amount } = req.body;
+      if (!amount || amount < 5) {
+        res.status(400).json({ error: 'Minimum deposit is $5.00' });
+        return;
+      }
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const session = await StripePaymentService.createDepositSession(
+        req.user.id,
+        parseFloat(amount),
+        `${frontendUrl}/wallet?deposit=success`,
+        `${frontendUrl}/wallet?deposit=cancelled`
+      );
+
+      res.json({
+        success: true,
+        sessionId: session.sessionId,
+        url: session.url,
+        paymentsEnabled: isPaymentsEnabled()
+      });
+    } catch (error: any) {
+      console.error('Create deposit error:', error);
+      res.status(400).json({ error: error.message || 'Failed to create deposit' });
+    }
+  }
+
+  /**
+   * Payment feature flag status
+   */
+  static async getPaymentsStatus(_req: AuthenticatedRequest, res: Response): Promise<void> {
+    res.json({
+      success: true,
+      paymentsEnabled: isPaymentsEnabled()
+    });
   }
 }
 

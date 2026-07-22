@@ -1,0 +1,3 @@
+# Place TLS certificates here for docker-compose.prod.yml proxy profile:
+# - fullchain.pem
+# - privkey.pem

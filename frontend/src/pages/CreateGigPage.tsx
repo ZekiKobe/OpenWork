@@ -22,6 +22,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const gigSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(100, 'Title must be less than 100 characters'),
@@ -52,6 +53,7 @@ const categories = [
 ];
 
 const CreateGigPage: React.FC = () => {
+  usePageTitle('Create a Gig');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);

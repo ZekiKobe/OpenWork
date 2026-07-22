@@ -146,7 +146,7 @@ export const RulesPage: React.FC = () => {
               Remember: Quality Over Quantity
             </h3>
             <p className="text-primary-700">
-              GrowTogether is about building a community of genuine contributors. We focus on rewarding
+              OpenWork is about building a community of genuine contributors. We focus on rewarding
               meaningful engagement, not artificial metrics or financial incentives. Help us create
               a space where everyone can learn and grow together.
             </p>

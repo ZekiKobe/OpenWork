@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useSmoothScroll } from '../hooks/useSmoothScroll';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
@@ -16,6 +17,7 @@ import {
 import type { UserProfile } from '../types';
 
 const SettingsPage: React.FC = () => {
+  usePageTitle('Settings');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -99,8 +101,7 @@ const SettingsPage: React.FC = () => {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
+
     if (errors[`password_${name}`]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -159,7 +160,10 @@ const SettingsPage: React.FC = () => {
     
     if (!passwordData.current_password) newErrors.password_current_password = 'Current password is required';
     if (!passwordData.new_password) newErrors.password_new_password = 'New password is required';
-    if (passwordData.new_password.length < 6) newErrors.password_new_password = 'Password must be at least 6 characters';
+    if (passwordData.new_password.length < 8) newErrors.password_new_password = 'Password must be at least 8 characters';
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(passwordData.new_password)) {
+      newErrors.password_new_password = 'Password must contain uppercase, lowercase, and a number';
+    }
     if (passwordData.new_password !== passwordData.confirm_new_password) newErrors.password_confirm_new_password = 'Passwords do not match';
     
     if (Object.keys(newErrors).length > 0) {
@@ -169,17 +173,17 @@ const SettingsPage: React.FC = () => {
     
     try {
       setSaving(true);
-      // In a real app, you would send the password change request to the server
-      // For now, we'll just show a success message
+      await apiService.changePassword(passwordData.current_password, passwordData.new_password);
       alert('Password updated successfully!');
       setPasswordData({
         current_password: '',
         new_password: '',
         confirm_new_password: '',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update password:', error);
-      alert('Failed to update password');
+      const message = error.response?.data?.error || 'Failed to update password';
+      alert(message);
     } finally {
       setSaving(false);
     }
@@ -393,7 +397,7 @@ const SettingsPage: React.FC = () => {
                         <div className="relative">
                           <Input
                             name="current_password"
-                            type={showPassword ? "text" : "password"}
+                            type={showPassword ? 'text' : 'password'}
                             value={passwordData.current_password}
                             onChange={handlePasswordChange}
                             placeholder="Enter your current password"
@@ -408,7 +412,7 @@ const SettingsPage: React.FC = () => {
                         </div>
                         {errors.password_current_password && <p className="mt-1 text-sm text-danger-600">{errors.password_current_password}</p>}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-secondary-700 mb-1">New Password</label>
                         <Input
@@ -420,7 +424,7 @@ const SettingsPage: React.FC = () => {
                         />
                         {errors.password_new_password && <p className="mt-1 text-sm text-danger-600">{errors.password_new_password}</p>}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-secondary-700 mb-1">Confirm New Password</label>
                         <Input
@@ -432,10 +436,15 @@ const SettingsPage: React.FC = () => {
                         />
                         {errors.password_confirm_new_password && <p className="mt-1 text-sm text-danger-600">{errors.password_confirm_new_password}</p>}
                       </div>
-                      
-                      <Button type="submit" disabled={saving} className="mt-4">
-                        {saving ? 'Updating...' : 'Update Password'}
-                      </Button>
+
+                      <div className="flex items-center justify-between">
+                        <Button type="submit" disabled={saving}>
+                          {saving ? 'Updating...' : 'Update Password'}
+                        </Button>
+                        <a href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
+                          Forgot password?
+                        </a>
+                      </div>
                     </form>
                   </CardContent>
                 </Card>

@@ -22,6 +22,7 @@ import {
   Filter,
   X
 } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const categories = [
   { id: 'all', name: 'All Categories', icon: Briefcase, color: 'bg-green-100 text-green-600' },
@@ -36,6 +37,7 @@ const categories = [
 ];
 
 export const BrowseGigsPage: React.FC = () => {
+  usePageTitle('Browse Gigs');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();

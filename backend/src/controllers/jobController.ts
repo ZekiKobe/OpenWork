@@ -3,7 +3,12 @@ import { Op } from 'sequelize';
 import Job, { JobStatus } from '../models/Job';
 import JobApplication, { ApplicationStatus } from '../models/JobApplication';
 import User from '../models/User';
+import Contract, { ContractStatus, PaymentStatus } from '../models/Contract';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { PaymentService } from '../services/paymentService';
+import { NotificationService } from '../services/notificationService';
+import { sequelize } from '../config/database';
+import { NotificationType } from '../models/Notification';
 
 export const createJob = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -275,9 +280,8 @@ export const hireFreelancer = async (req: AuthenticatedRequest, res: Response) =
     }
 
     const { jobId } = req.params;
-    const { application_id } = req.body;
+    const { application_id, create_escrow = true } = req.body;
 
-    // Get job and verify ownership
     const job = await Job.findByPk(jobId);
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
@@ -291,7 +295,6 @@ export const hireFreelancer = async (req: AuthenticatedRequest, res: Response) =
       return res.status(400).json({ error: 'Job is not open for hiring' });
     }
 
-    // Get application
     const application = await JobApplication.findByPk(application_id, {
       include: [{ model: User, as: 'freelancer' }]
     });
@@ -304,17 +307,99 @@ export const hireFreelancer = async (req: AuthenticatedRequest, res: Response) =
       return res.status(400).json({ error: 'Application is not in a valid state for hiring' });
     }
 
-    // Update application status
-    await application.update({ status: ApplicationStatus.ACCEPTED });
+    const price = application.proposed_rate
+      ? parseFloat(application.proposed_rate.toString())
+      : (job.fixed_price ? parseFloat(job.fixed_price.toString()) : parseFloat((job.budget_max || job.budget_min || 0).toString()));
 
-    // Update job status
-    await job.update({ status: JobStatus.IN_PROGRESS });
+    if (!price || price < 5) {
+      return res.status(400).json({ error: 'A valid contract price of at least $5 is required to hire' });
+    }
+
+    const deliveryDays = job.deadline
+      ? Math.max(1, Math.ceil((new Date(job.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : 14;
+
+    const dbTx = await sequelize.transaction();
+    let contract: Contract;
+
+    try {
+      await application.update({ status: ApplicationStatus.ACCEPTED }, { transaction: dbTx });
+      await job.update({ status: JobStatus.IN_PROGRESS }, { transaction: dbTx });
+
+      // Reject other pending applications
+      await JobApplication.update(
+        { status: ApplicationStatus.REJECTED },
+        {
+          where: {
+            job_id: job.id,
+            id: { [Op.ne]: application.id },
+            status: { [Op.in]: [ApplicationStatus.PENDING, ApplicationStatus.SHORTLISTED] }
+          },
+          transaction: dbTx
+        }
+      );
+
+      contract = await Contract.create(
+        {
+          gig_id: null,
+          job_id: job.id,
+          client_id: job.client_id,
+          freelancer_id: application.freelancer_id,
+          title: job.title,
+          description: job.description.slice(0, 2000),
+          price,
+          delivery_time: deliveryDays,
+          revisions_included: 1,
+          started_at: new Date(),
+          deadline: job.deadline || new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000),
+          attachments: [],
+          requirements: Array.isArray(job.requirements) ? job.requirements : [],
+          deliverables: [],
+          contract_status: ContractStatus.IN_PROGRESS,
+          payment_status: PaymentStatus.UNPAID
+        } as any,
+        { transaction: dbTx }
+      );
+
+      await dbTx.commit();
+    } catch (err) {
+      await dbTx.rollback();
+      throw err;
+    }
+
+    let escrowTransaction = null;
+    let escrowError: string | undefined;
+
+    if (create_escrow) {
+      try {
+        escrowTransaction = await PaymentService.createEscrowPayment(job.client_id, contract.id, price);
+      } catch (err: any) {
+        escrowError = err.message || 'Escrow payment failed — fund wallet and pay escrow from contracts';
+      }
+    }
+
+    try {
+      await NotificationService.createNotification(
+        application.freelancer_id,
+        NotificationType.JOB_ACCEPTED,
+        'You were hired!',
+        `You were hired for "${job.title}".`,
+        '/my-contracts'
+      );
+    } catch {
+      // Non-blocking
+    }
 
     res.json({
       success: true,
-      message: 'Freelancer hired successfully',
+      message: escrowTransaction
+        ? 'Freelancer hired and escrow funded'
+        : 'Freelancer hired; escrow pending',
       application,
-      job
+      job,
+      contract,
+      escrow: escrowTransaction,
+      escrowError
     });
   } catch (error: any) {
     console.error('Error hiring freelancer:', error);

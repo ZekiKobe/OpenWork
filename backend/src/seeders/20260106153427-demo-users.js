@@ -5,6 +5,11 @@ const bcrypt = require('bcryptjs');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Skipping demo users seeder in production');
+      return;
+    }
+
     // Delete existing demo users first to avoid conflicts
     await queryInterface.sequelize.query(
       "DELETE FROM users WHERE email IN ('admin@example.com', 'john.doe@example.com', 'jane.smith@example.com', 'client@example.com', 'moderator@example.com', 'user@example.com')"

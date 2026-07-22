@@ -1,10 +1,10 @@
 -- Database initialization script
 -- This script runs automatically when the MySQL container is first created
 
-CREATE DATABASE IF NOT EXISTS GrowTogether_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS OpenWork_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE GrowTogether_db;
+USE OpenWork_db;
 
 -- Grant privileges (already handled by MySQL container, but keeping for reference)
--- GRANT ALL PRIVILEGES ON GrowTogether_db.* TO 'root'@'%';
+-- GRANT ALL PRIVILEGES ON OpenWork_db.* TO 'root'@'%';
 -- FLUSH PRIVILEGES;

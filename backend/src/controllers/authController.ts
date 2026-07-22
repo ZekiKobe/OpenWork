@@ -203,10 +203,63 @@ export class AuthController {
       res.status(500).json({ error: error.message || 'Failed to logout' });
     }
   }
+
+  static async googleLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const credential = req.body.credential || req.body.token;
+
+      if (!credential || typeof credential !== 'string') {
+        res.status(400).json({ error: 'Google credential is required' });
+        return;
+      }
+
+      const result = await AuthService.googleLogin(credential);
+
+      res.json({
+        message: 'Login successful',
+        ...result
+      });
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      res.status(401).json({ error: error.message || 'Google sign-in failed' });
+    }
+  }
+
+  static async changePassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ error: 'Validation failed', details: errors.array() });
+        return;
+      }
+
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      await AuthService.changePassword(req.user.id, currentPassword, newPassword);
+
+      res.json({ success: true, message: 'Password changed successfully' });
+    } catch (error: any) {
+      console.error('Change password error:', error);
+      res.status(400).json({ error: error.message || 'Failed to change password' });
+    }
+  }
 }
 
 export const resetPasswordValidators = [
   body('token').notEmpty().withMessage('Reset token required'),
+  body('newPassword')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+];
+
+export const changePasswordValidators = [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')

@@ -2,11 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Textarea } from '../components/ui/Textarea';
-import { useToast } from '../contexts/ToastContext';
+import { JobApplicationModal } from '../components/jobs/JobApplicationModal';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import {
@@ -51,7 +48,6 @@ interface Job {
 
 const JobsPage: React.FC = () => {
   const { user } = useAuth();
-  const { showToast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,13 +56,7 @@ const JobsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedExperience, setSelectedExperience] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [showApplyModal, setShowApplyModal] = useState(false);
-  const [currentJobId, setCurrentJobId] = useState<number | null>(null);
-  const [coverLetter, setCoverLetter] = useState('');
-  const [proposedRate, setProposedRate] = useState('');
-  const [proposedHours, setProposedHours] = useState('');
-  const [estimatedCompletion, setEstimatedCompletion] = useState('');
-  const [applying, setApplying] = useState(false);
+  const [selectedJobForApplication, setSelectedJobForApplication] = useState<Job | null>(null);
 
   const categories = [
     { value: 'all', label: 'All Categories' },
@@ -181,51 +171,8 @@ const JobsPage: React.FC = () => {
     return 'Budget not specified';
   };
 
-  const handleApplyClick = (jobId: number) => {
-    setCurrentJobId(jobId);
-    setShowApplyModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowApplyModal(false);
-    setCurrentJobId(null);
-    setCoverLetter('');
-    setProposedRate('');
-    setProposedHours('');
-    setEstimatedCompletion('');
-  };
-
-  const handleApplySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!currentJobId) return;
-    
-    // Client-side validation
-    if (coverLetter.length < 10) {
-      showToast('Cover letter must be at least 10 characters', 'error');
-      return;
-    }
-    
-    setApplying(true);
-    try {
-      const applicationData = {
-        job_id: currentJobId,
-        cover_letter: coverLetter,
-        proposed_rate: proposedRate ? parseFloat(proposedRate) : undefined,
-        proposed_hours: proposedHours ? parseFloat(proposedHours) : undefined,
-        estimated_completion: estimatedCompletion
-      };
-      
-      await apiService.applyForJob(applicationData);
-      
-      handleCloseModal();
-      showToast('Application submitted successfully!', 'success');
-    } catch (error) {
-      console.error('Failed to submit application:', error);
-      showToast('Failed to submit application. Please try again.', 'error');
-    } finally {
-      setApplying(false);
-    }
+  const handleApplyClick = (job: Job) => {
+    setSelectedJobForApplication(job);
   };
 
   return (
@@ -408,7 +355,7 @@ const JobsPage: React.FC = () => {
                           <Button 
                             size="sm" 
                             className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApplyClick(job.id)}
+                            onClick={() => handleApplyClick(job)}
                           >
                             Apply Now
                           </Button>
@@ -433,95 +380,13 @@ const JobsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Job Application Modal */}
-      {showApplyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-secondary-900">Apply for Job</h3>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleCloseModal}
-                >
-                  Close
-                </Button>
-              </div>
-
-              <form onSubmit={handleApplySubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">Cover Letter</label>
-                  <Textarea
-                    value={coverLetter}
-                    onChange={(e) => setCoverLetter(e.target.value)}
-                    placeholder="Write a compelling cover letter explaining why you're the best fit for this job..."
-                    rows={4}
-                    required
-                    helperText={`Minimum 10 characters (${coverLetter.length}/10 minimum)`}
-                    error={coverLetter.length > 0 && coverLetter.length < 10 ? 'Cover letter must be at least 10 characters' : ''}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">Proposed Rate ($)</label>
-                    <Input
-                      type="number"
-                      value={proposedRate}
-                      onChange={(e) => setProposedRate(e.target.value)}
-                      placeholder="e.g., 50"
-                      min="0"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">Proposed Hours</label>
-                    <Input
-                      type="number"
-                      value={proposedHours}
-                      onChange={(e) => setProposedHours(e.target.value)}
-                      placeholder="e.g., 20"
-                      min="0"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">Estimated Completion Date</label>
-                  <Input
-                    type="date"
-                    value={estimatedCompletion}
-                    onChange={(e) => setEstimatedCompletion(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleCloseModal}
-                    disabled={applying}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    className="bg-green-600 hover:bg-green-700"
-                    disabled={applying}
-                  >
-                    {applying ? (
-                      <>
-                        <LoadingSpinner size="sm" variant="gray" />
-                        Submitting...
-                      </>
-                    ) : 'Submit Application'}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+      {selectedJobForApplication && (
+        <JobApplicationModal
+          job={selectedJobForApplication}
+          isOpen={!!selectedJobForApplication}
+          onClose={() => setSelectedJobForApplication(null)}
+          onSuccess={() => setSelectedJobForApplication(null)}
+        />
       )}
     </div>
   );

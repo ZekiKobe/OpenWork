@@ -113,7 +113,7 @@ export const ProfileCompletion: React.FC<ProfileCompletionProps> = ({ user, clas
             </>
           ) : (
             <>
-              Complete your profile to unlock full access to buying and selling knowledge on GrowTogether.
+              Complete your profile to unlock full access to buying and selling knowledge on OpenWork.
             </>
           )}
         </p>

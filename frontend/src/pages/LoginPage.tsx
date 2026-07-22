@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
 import { useToast } from '../contexts/ToastContext';
 import { User, Lock, ArrowLeft, Home } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const emailSchema = z.object({
   email: z.string().min(1, 'Username or Email is required'),
@@ -21,6 +22,7 @@ type EmailFormData = z.infer<typeof emailSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const LoginPage: React.FC = () => {
+  usePageTitle('Sign In');
   const { login, user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -113,7 +115,7 @@ export const LoginPage: React.FC = () => {
       <div className="w-full py-6 px-4 sm:px-6">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <Link to="/" className="text-xl font-semibold text-secondary-900 lowercase hover:text-green-600 transition-colors">
-            GrowTogether
+            OpenWork
           </Link>
           <Link
             to="/"
@@ -129,7 +131,7 @@ export const LoginPage: React.FC = () => {
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-12">
         <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-secondary-200 p-8">
           {/* Title */}
-          <h1 className="text-2xl font-semibold text-secondary-900 mb-6">Log in to GrowTogether</h1>
+          <h1 className="text-2xl font-semibold text-secondary-900 mb-6">Log in to OpenWork</h1>
 
         {step === 'email' ? (
           <>
@@ -179,27 +181,15 @@ export const LoginPage: React.FC = () => {
               <GoogleLoginButton
                 onSuccess={() => {
                   setJustLoggedIn(true);
-                  // Navigation will be handled by useEffect
                 }}
-                onError={(error) => showToast('Google login failed. Please try again.', 'error')}
+                onError={() => showToast('Google login failed. Please try again.', 'error')}
               />
-              
-              {/* Apple Login Button (Placeholder) */}
-              <button
-                type="button"
-                className="w-full bg-white border-2 border-secondary-200 hover:bg-secondary-50 text-secondary-900 font-medium py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-md flex items-center justify-center space-x-3 text-base"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                </svg>
-                <span>Continue with Apple</span>
-              </button>
             </div>
 
             {/* Sign Up Section */}
             <div className="mt-8 pt-6 border-t border-secondary-200">
               <p className="text-sm text-secondary-600 text-center mb-4">
-                Don't have a GrowTogether account?
+                Don't have a OpenWork account?
               </p>
               <Link to="/register" className="block w-full">
                 <Button
@@ -278,9 +268,14 @@ export const LoginPage: React.FC = () => {
 
       {/* Simple Footer */}
       <div className="w-full py-4 px-4 sm:px-6">
-        <div className="max-w-md mx-auto text-center">
+        <div className="max-w-md mx-auto text-center space-y-2">
+          <p className="text-xs text-secondary-500">
+            <Link to="/terms" className="hover:text-secondary-700">Terms</Link>
+            {' · '}
+            <Link to="/privacy" className="hover:text-secondary-700">Privacy</Link>
+          </p>
           <p className="text-xs text-secondary-400">
-            © {new Date().getFullYear()} GrowTogether. All rights reserved.
+            © {new Date().getFullYear()} OpenWork. All rights reserved.
           </p>
         </div>
       </div>

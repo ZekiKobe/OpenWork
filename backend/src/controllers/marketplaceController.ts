@@ -1,10 +1,12 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { Gig, Message, Contract, User } from '../models';
 import { GigStatus } from '../models/Gig';
 import { MessageStatus } from '../models/Message';
-import { ContractStatus } from '../models/Contract';
+import { ContractStatus, PaymentStatus } from '../models/Contract';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { PaymentService } from '../services/paymentService';
+import { NotificationService } from '../services/notificationService';
 
 export class MarketplaceController {
 
@@ -237,6 +239,9 @@ export class MarketplaceController {
           { model: User, as: 'receiver', attributes: ['id', 'username', 'avatar_url'] }
         ]
       });
+
+      const { emitToUser } = await import('../realtime/socket');
+      emitToUser(receiver_id, 'message', messageWithUsers?.toJSON());
 
       res.status(201).json({
         success: true,
@@ -660,6 +665,9 @@ export class MarketplaceController {
           updateData.delivered_at = new Date();
           break;
         case 'approved':
+          if (contract.client_id !== userId) {
+            return res.status(403).json({ success: false, error: 'Only client can approve contract' });
+          }
           updateData.approved_at = new Date();
           break;
         case 'cancelled':
@@ -670,9 +678,39 @@ export class MarketplaceController {
 
       await contract.update(updateData);
 
+      // Auto-create escrow when freelancer accepts (if unpaid)
+      if (status === 'accepted' && contract.payment_status === PaymentStatus.UNPAID) {
+        try {
+          await PaymentService.createEscrowPayment(
+            contract.client_id,
+            contract.id,
+            parseFloat(contract.price.toString())
+          );
+        } catch (escrowErr: any) {
+          // Contract accepted but escrow pending funding
+          console.warn('Escrow on accept failed:', escrowErr.message);
+        }
+      }
+
+      // Auto-release escrow when client approves
+      if (status === 'approved' && contract.payment_status === PaymentStatus.PAID) {
+        try {
+          await PaymentService.releaseEscrowPayment(contract.id, 'client');
+          await NotificationService.notifyPaymentReceived(
+            contract.freelancer_id,
+            parseFloat(contract.price.toString()),
+            '/wallet'
+          );
+        } catch (releaseErr: any) {
+          console.warn('Escrow release on approve failed:', releaseErr.message);
+        }
+      }
+
+      const refreshed = await Contract.findByPk(contract.id);
+
       res.json({
         success: true,
-        contract
+        contract: refreshed
       });
     } catch (error: any) {
       console.error('Update contract status error:', error);
@@ -685,3 +723,4 @@ export class MarketplaceController {
 }
 
 export const marketplaceController = new MarketplaceController();
+

@@ -3,6 +3,11 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Skipping demo jobs seeder in production');
+      return;
+    }
+
     const now = new Date();
     
     // Get the client user ID (client@example.com)

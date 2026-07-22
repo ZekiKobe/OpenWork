@@ -32,6 +32,7 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
 }) => {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [formData, setFormData] = useState({
     cover_letter: '',
     proposed_rate: '',
@@ -44,13 +45,20 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Handle body scroll lock
+  // Handle body scroll lock + slide-in animation
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      // Next frame so CSS transition runs from off-screen
+      const frame = requestAnimationFrame(() => setVisible(true));
+      return () => {
+        cancelAnimationFrame(frame);
+        document.body.style.overflow = 'unset';
+      };
     }
+
+    setVisible(false);
+    document.body.style.overflow = 'unset';
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -165,12 +173,18 @@ export const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-50 transition-opacity duration-300"
+        className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${
+          visible ? 'bg-opacity-50 opacity-100' : 'bg-opacity-0 opacity-0'
+        }`}
         onClick={handleClose}
       />
 
       {/* Slide-in Panel from Right */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[600px] lg:w-[700px] bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col">
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[600px] lg:w-[700px] bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
+          visible ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
         {/* Header - Fixed */}
         <div className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center justify-between">

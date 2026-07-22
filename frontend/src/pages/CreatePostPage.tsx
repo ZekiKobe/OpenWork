@@ -150,15 +150,15 @@ export const CreatePostPage: React.FC = () => {
   const selectedCategory = watch('category');
   const selectedLevel = watch('expertise_level');
 
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setThumbnailFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setThumbnailPreview(e.target?.result as string);
-        // In a real app, you'd upload to a server and get back a URL
-        // For now, we'll just store the data URL
-        // setValue('thumbnail_url', e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -173,6 +173,12 @@ export const CreatePostPage: React.FC = () => {
         ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
         : [];
 
+      let thumbnail_url: string | undefined;
+      if (thumbnailFile) {
+        const uploadResult = await apiService.uploadImage(thumbnailFile);
+        thumbnail_url = uploadResult.url;
+      }
+
       const postData = {
         title: data.title,
         content: data.content,
@@ -180,14 +186,13 @@ export const CreatePostPage: React.FC = () => {
         category: data.category,
         expertise_level: data.expertise_level,
         estimated_read_time: data.estimated_read_time,
+        ...(thumbnail_url ? { thumbnail_url } : {})
       };
 
-      console.log('Sending post data:', postData);
       await apiService.createPost(postData);
       navigate('/');
     } catch (error: any) {
       console.error('Post creation error:', error);
-      console.error('Error response:', error.response);
       const errorMessage = error.response?.data?.error ||
                           error.response?.data?.message ||
                           error.message ||

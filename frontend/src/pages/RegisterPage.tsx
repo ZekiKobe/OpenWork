@@ -10,6 +10,7 @@ import { Input } from '../components/ui/Input';
 import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
 import { useToast } from '../contexts/ToastContext';
 import { Home } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -32,6 +33,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterPage: React.FC = () => {
+  usePageTitle('Create Account');
   const { role: roleParam } = useParams<{ role: 'freelancer' | 'client' }>();
   const { register: registerUser, user } = useAuth();
   const { showToast } = useToast();
@@ -121,7 +123,7 @@ export const RegisterPage: React.FC = () => {
       <div className="w-full py-6 px-4 sm:px-6">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <Link to="/" className="text-xl font-semibold text-secondary-900 lowercase hover:text-green-600 transition-colors">
-            GrowTogether
+            OpenWork
           </Link>
           <Link
             to="/"
@@ -137,7 +139,7 @@ export const RegisterPage: React.FC = () => {
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-12">
         <Card className="w-full max-w-md" padding="lg">
           <CardHeader>
-            <CardTitle className="text-center text-xl">Join GrowTogether</CardTitle>
+            <CardTitle className="text-center text-xl">Join OpenWork</CardTitle>
           </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -239,8 +241,10 @@ export const RegisterPage: React.FC = () => {
 
           <div className="mt-4 p-3 bg-secondary-50 border border-secondary-200 rounded">
             <p className="text-xs text-secondary-700">
-              By joining, you agree to our community guidelines and understand that
-              GrowTogether focuses on quality contributions, not monetary rewards.
+              By joining, you agree to our{' '}
+              <Link to="/terms" className="text-accent-600 hover:text-accent-700 font-medium">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="/privacy" className="text-accent-600 hover:text-accent-700 font-medium">Privacy Policy</Link>.
             </p>
           </div>
         </CardContent>
@@ -249,9 +253,14 @@ export const RegisterPage: React.FC = () => {
 
       {/* Simple Footer */}
       <div className="w-full py-4 px-4 sm:px-6">
-        <div className="max-w-md mx-auto text-center">
+        <div className="max-w-md mx-auto text-center space-y-2">
+          <p className="text-xs text-secondary-500">
+            <Link to="/terms" className="hover:text-secondary-700">Terms</Link>
+            {' · '}
+            <Link to="/privacy" className="hover:text-secondary-700">Privacy</Link>
+          </p>
           <p className="text-xs text-secondary-400">
-            © {new Date().getFullYear()} GrowTogether. All rights reserved.
+            © {new Date().getFullYear()} OpenWork. All rights reserved.
           </p>
         </div>
       </div>

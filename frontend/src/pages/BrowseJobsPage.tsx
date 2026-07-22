@@ -14,6 +14,7 @@ import {
   Sparkles,
   Clock
 } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface Job {
   id: number;
@@ -77,6 +78,7 @@ const calculateMatchScore = (job: Job, userSkills: string[] = [], userExpertise:
 };
 
 export const BrowseJobsPage: React.FC = () => {
+  usePageTitle('Browse Jobs');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();

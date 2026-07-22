@@ -93,7 +93,7 @@ When using Docker, make sure your `.env` has:
 ```env
 DB_HOST=db
 DB_PORT=3306
-DB_NAME=GrowTogether_db
+DB_NAME=OpenWork_db
 DB_USER=root
 DB_PASSWORD=rootpassword
 ```
@@ -110,7 +110,7 @@ When using local MySQL, make sure your `.env` has:
 ```env
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=GrowTogether_db
+DB_NAME=OpenWork_db
 DB_USER=root
 DB_PASSWORD=your_password
 ```

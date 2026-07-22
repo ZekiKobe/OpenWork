@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
+import { getSocket } from '../services/socket';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -33,6 +34,11 @@ const MessagesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const selectedConversationRef = useRef<Conversation | null>(null);
+
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
 
   // Fetch conversations
   const loadConversations = async () => {
@@ -89,6 +95,50 @@ const MessagesPage: React.FC = () => {
   useEffect(() => {
     loadConversations();
   }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !user) return;
+
+    const handleIncomingMessage = (message: Message) => {
+      const activeConversation = selectedConversationRef.current;
+      const isIncoming = message.receiver_id === user.id;
+      const otherUserId = isIncoming ? message.sender_id : message.receiver_id;
+
+      setConversations((prev) => {
+        const existing = prev.find((conv) => conv.other_user.id === otherUserId);
+        if (existing) {
+          return prev.map((conv) =>
+            conv.other_user.id === otherUserId
+              ? {
+                  ...conv,
+                  last_message: message,
+                  unread_count: isIncoming && activeConversation?.other_user.id !== otherUserId
+                    ? conv.unread_count + 1
+                    : conv.unread_count,
+                }
+              : conv
+          );
+        }
+        return prev;
+      });
+
+      if (
+        isIncoming &&
+        activeConversation?.other_user.id === message.sender_id
+      ) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [...prev, message];
+        });
+      }
+    };
+
+    socket.on('message', handleIncomingMessage);
+    return () => {
+      socket.off('message', handleIncomingMessage);
+    };
+  }, [user]);
 
   // Handle query parameters to auto-select conversation after conversations are loaded
   useEffect(() => {

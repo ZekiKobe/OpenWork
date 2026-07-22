@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { TrendingUp, Heart, MessageSquare, Eye, User, Calendar, Tag } from 'lucide-react';
+import { TrendingUp, Heart, MessageSquare, User, Calendar, Tag } from 'lucide-react';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import type { Post } from '../types';
 
@@ -20,7 +20,26 @@ export const TrendingPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiService.getPosts(1, 50);
-      setPosts(response.data || []);
+      const allPosts = response.data || [];
+
+      const now = Date.now();
+      const cutoffMs = timeframe === 'day' ? 86400000
+        : timeframe === 'week' ? 604800000
+        : timeframe === 'month' ? 2592000000
+        : Infinity;
+
+      const filtered = allPosts.filter((post) => {
+        if (timeframe === 'all') return true;
+        return now - new Date(post.created_at).getTime() <= cutoffMs;
+      });
+
+      const sorted = [...filtered].sort((a, b) => {
+        const scoreA = (a.stats?.likes_count || 0) * 2 + (a.stats?.comments_count || 0) * 3;
+        const scoreB = (b.stats?.likes_count || 0) * 2 + (b.stats?.comments_count || 0) * 3;
+        return scoreB - scoreA;
+      });
+
+      setPosts(sorted);
     } catch (error) {
       console.error('Failed to load trending posts:', error);
       setPosts([]);
@@ -53,7 +72,7 @@ export const TrendingPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Trending Posts</h1>
-              <p className="text-gray-600">Discover the most popular content in the community</p>
+              <p className="text-gray-600">Sorted by engagement (likes, comments, views) — not a dedicated trending API</p>
             </div>
           </div>
 
@@ -176,10 +195,6 @@ export const TrendingPage: React.FC = () => {
                         <div className="flex items-center space-x-1">
                           <MessageSquare className="w-4 h-4" />
                           <span className="font-medium">{post.stats?.comments_count || 0}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Eye className="w-4 h-4" />
-                          <span className="font-medium">{post.stats?.views_count || 0}</span>
                         </div>
                       </div>
                     </div>

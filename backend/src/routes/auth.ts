@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { AuthController, registerValidators, loginValidators } from '../controllers/authController';
+import { AuthController, registerValidators, loginValidators, changePasswordValidators } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
-import { loginLimiter, registerLimiter } from '../middleware/rateLimit';
+import { loginLimiter, registerLimiter, passwordResetLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 
@@ -10,6 +10,9 @@ router.post('/register', registerLimiter, registerValidators, AuthController.reg
 
 // POST /auth/login
 router.post('/login', loginLimiter, loginValidators, AuthController.login);
+
+// POST /auth/google
+router.post('/google', loginLimiter, AuthController.googleLogin);
 
 // GET /auth/me
 router.get('/me', authenticate, AuthController.getCurrentUser);
@@ -22,10 +25,13 @@ router.post('/logout', authenticate, AuthController.logout);
 
 // Email verification
 router.get('/verify-email', AuthController.verifyEmail);
-router.post('/resend-verification', AuthController.resendVerificationEmail);
+router.post('/resend-verification', passwordResetLimiter, AuthController.resendVerificationEmail);
 
 // Password reset
-router.post('/forgot-password', AuthController.requestPasswordReset);
-router.post('/reset-password', AuthController.resetPassword);
+router.post('/forgot-password', passwordResetLimiter, AuthController.requestPasswordReset);
+router.post('/reset-password', passwordResetLimiter, AuthController.resetPassword);
+
+// Change password (authenticated)
+router.post('/change-password', authenticate, changePasswordValidators, AuthController.changePassword);
 
 export default router;

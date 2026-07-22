@@ -89,7 +89,7 @@ Create a `.env` file in the root directory (or use the provided `.env.example` a
 ```env
 DB_HOST=db
 DB_PORT=3306
-DB_NAME=GrowTogether_db
+DB_NAME=OpenWork_db
 DB_USER=root
 DB_PASSWORD=rootpassword
 

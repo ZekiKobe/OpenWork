@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { ProfileCompletionWizard } from './ProfileCompletionWizard';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { apiService } from '../../services/api';
+import { getSocket } from '../../services/socket';
 import {
   Home,
   User,
@@ -71,7 +72,17 @@ export const Navbar: React.FC = () => {
       loadUnreadCount();
       // Refresh every 30 seconds
       const interval = setInterval(loadUnreadCount, 30000);
-      return () => clearInterval(interval);
+
+      const socket = getSocket();
+      const handleNotification = () => {
+        setUnreadNotificationCount((prev) => prev + 1);
+      };
+      socket?.on('notification', handleNotification);
+
+      return () => {
+        clearInterval(interval);
+        socket?.off('notification', handleNotification);
+      };
     }
   }, [user]);
 
@@ -129,7 +140,7 @@ export const Navbar: React.FC = () => {
               className="flex items-center" 
               onClick={closeMobileMenu}
             >
-              <span className="text-2xl font-bold text-secondary-900 lowercase">GrowTogether</span>
+              <span className="text-2xl font-bold text-secondary-900">OpenWork</span>
             </Link>
 
             {/* Desktop Navigation - Centered */}
@@ -313,10 +324,10 @@ export const Navbar: React.FC = () => {
                 </Link>
               )}
 
-              {/* Why GrowTogether - Available to all */}
+              {/* Why OpenWork - Available to all */}
               <div className="relative group">
                 <button className="text-base text-gray-700 hover:text-gray-900 font-medium transition-colors flex items-center space-x-1 py-2">
-                  <span>Why GrowTogether</span>
+                  <span>Why OpenWork</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg border border-gray-200 shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
@@ -546,7 +557,7 @@ export const Navbar: React.FC = () => {
                 <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">VL</span>
                 </div>
-                <span className="text-xl font-bold text-secondary-900">GrowTogether</span>
+                <span className="text-xl font-bold text-secondary-900">OpenWork</span>
               </Link>
               <button
                 onClick={closeMobileMenu}

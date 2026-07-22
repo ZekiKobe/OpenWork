@@ -1,31 +1,17 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { S3Client } from '@aws-sdk/client-s3';
+import multerS3 from 'multer-s3';
 
-// Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename: timestamp-randomstring-originalname
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const nameWithoutExt = path.basename(file.originalname, ext);
-    cb(null, `${nameWithoutExt}-${uniqueSuffix}${ext}`);
-  }
-});
+const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
-// File filter for images only
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  
+const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -33,20 +19,63 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   }
 };
 
-// Create multer upload instance
+function createStorage() {
+  if (process.env.STORAGE_DRIVER === 's3' && process.env.AWS_S3_BUCKET) {
+    const s3 = new S3Client({
+      region: process.env.AWS_REGION || 'us-east-1',
+      credentials: process.env.AWS_ACCESS_KEY_ID
+        ? {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+          }
+        : undefined
+    });
+
+    return multerS3({
+      s3,
+      bucket: process.env.AWS_S3_BUCKET,
+      contentType: multerS3.AUTO_CONTENT_TYPE,
+      key: (_req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        const nameWithoutExt = path.basename(file.originalname, ext);
+        cb(null, `uploads/${nameWithoutExt}-${uniqueSuffix}${ext}`);
+      }
+    });
+  }
+
+  return multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      cb(null, uploadsDir);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      const nameWithoutExt = path.basename(file.originalname, ext);
+      cb(null, `${nameWithoutExt}-${uniqueSuffix}${ext}`);
+    }
+  });
+}
+
 export const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage: createStorage(),
+  fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max file size
+    fileSize: 10 * 1024 * 1024
   }
 });
 
-// Middleware for single image upload
 export const uploadSingle = upload.single('image');
-
-// Middleware for multiple images upload (max 10)
 export const uploadMultiple = upload.array('images', 10);
-
-// Middleware for gig images (max 10)
 export const uploadGigImages = upload.array('images', 10);
+
+export function getUploadedFileUrl(file: Express.Multer.File | any): string {
+  if (file.location) {
+    return file.location as string;
+  }
+  const base = process.env.UPLOAD_BASE_URL || '';
+  if (base) {
+    return `${base.replace(/\/$/, '')}/uploads/${file.filename}`;
+  }
+  return `/uploads/${file.filename}`;
+}

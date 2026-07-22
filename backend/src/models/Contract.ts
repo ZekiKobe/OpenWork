@@ -22,7 +22,8 @@ export enum PaymentStatus {
 
 export interface ContractAttributes {
   id: number;
-  gig_id: number;
+  gig_id?: number | null;
+  job_id?: number | null;
   client_id: number;
   freelancer_id: number;
   title: string;
@@ -54,7 +55,8 @@ export interface ContractCreationAttributes extends Omit<ContractAttributes, 'id
 
 class Contract extends Model<ContractAttributes, ContractCreationAttributes> implements ContractAttributes {
   public id!: number;
-  public gig_id!: number;
+  public gig_id?: number | null;
+  public job_id?: number | null;
   public client_id!: number;
   public freelancer_id!: number;
   public title!: string;
@@ -107,9 +109,17 @@ Contract.init(
     },
     gig_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'gigs',
+        key: 'id'
+      }
+    },
+    job_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'jobs',
         key: 'id'
       }
     },

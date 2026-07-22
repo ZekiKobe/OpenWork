@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -59,58 +60,11 @@ const OffersPage: React.FC = () => {
   const loadApplications = async () => {
     try {
       setLoading(true);
-      // This would be the actual API call once implemented
-      // const response = await apiService.getJobApplications();
-      // For now, using mock data
-      const mockApplications: JobApplication[] = [
-        {
-          id: 1,
-          job: {
-            id: 101,
-            title: 'React Frontend Developer',
-            description: 'Looking for experienced React developer to build modern UI',
-            budget: 2500,
-            client: {
-              id: 201,
-              username: 'john_doe',
-              avatar_url: 'https://via.placeholder.com/40'
-            }
-          },
-          cover_letter: 'I have 5 years of experience with React and would love to work on this project.',
-          proposed_rate: 50,
-          proposed_hours: 50,
-          estimated_completion: '2023-12-31',
-          attachments: ['resume.pdf', 'portfolio.pdf'],
-          status: 'accepted',
-          notes: 'Client approved proposal',
-          created_at: '2023-10-15T10:30:00Z',
-          updated_at: '2023-10-20T14:30:00Z'
-        },
-        {
-          id: 2,
-          job: {
-            id: 102,
-            title: 'Node.js Backend Developer',
-            description: 'Need backend developer for API development',
-            budget: 3000,
-            client: {
-              id: 202,
-              username: 'jane_smith',
-              avatar_url: 'https://via.placeholder.com/40'
-            }
-          },
-          cover_letter: 'Expert in Node.js and Express with experience in scalable applications.',
-          proposed_rate: 60,
-          proposed_hours: 40,
-          estimated_completion: '2023-12-15',
-          attachments: ['resume.pdf'],
-          status: 'accepted',
-          notes: 'Contract sent for signature',
-          created_at: '2023-10-10T14:20:00Z',
-          updated_at: '2023-10-18T09:15:00Z'
-        }
-      ];
-      setApplications(mockApplications);
+      const response = await apiService.getMyJobApplications();
+      const offers = (response.applications || []).filter(
+        (app: JobApplication) => app.status === 'accepted' || app.status === 'shortlisted'
+      );
+      setApplications(offers);
     } catch (err) {
       setError('Failed to load offers');
       console.error('Error loading offers:', err);
@@ -191,13 +145,16 @@ const OffersPage: React.FC = () => {
             <TrendingUp className="w-16 h-16 text-secondary-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-secondary-900 mb-2">No Offers Yet</h3>
             <p className="text-secondary-600 mb-6">
-              You haven't received any job offers yet. Keep applying to increase your chances!
+              You haven't received any job offers yet. Submit proposals to get started.
             </p>
-            <Link to="/jobs">
-              <Button>
-                Browse Jobs
-              </Button>
-            </Link>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/proposals">
+                <Button variant="outline">View Proposals</Button>
+              </Link>
+              <Link to="/browse-jobs">
+                <Button>Browse Jobs</Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       ) : (

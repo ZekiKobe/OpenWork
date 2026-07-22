@@ -3,6 +3,7 @@ import { ContentController, createPostValidators, updatePostValidators, createCo
 import { ModerationController, createReportValidators } from '../controllers/moderationController';
 import { authenticate, requireRole, optionalAuth, AuthenticatedRequest } from '../middleware/auth';
 import { UserRole } from '../models/User';
+import { postLimiter, commentLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 
@@ -13,12 +14,12 @@ router.get('/:postId/comments', optionalAuth, ContentController.getPostComments)
 
 // Protected routes
 router.use(authenticate);
-router.post('/', createPostValidators, ContentController.createPost);
+router.post('/', postLimiter, createPostValidators, ContentController.createPost);
 router.put('/:postId', updatePostValidators, ContentController.updatePost);
 router.delete('/:postId', ContentController.deletePost);
 
 // Comments
-router.post('/:postId/comments', createCommentValidators, ContentController.createComment);
+router.post('/:postId/comments', commentLimiter, createCommentValidators, ContentController.createComment);
 
 // Likes
 router.post('/:postId/like', ContentController.toggleLike);

@@ -11,6 +11,7 @@ import { Select } from '../components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { X, Plus, DollarSign, Clock, Tag, Briefcase } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const jobSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(200, 'Title must be less than 200 characters'),
@@ -42,6 +43,7 @@ const jobSchema = z.object({
 type JobFormData = z.infer<typeof jobSchema>;
 
 export const CreateJobPage: React.FC = () => {
+  usePageTitle('Post a Job');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

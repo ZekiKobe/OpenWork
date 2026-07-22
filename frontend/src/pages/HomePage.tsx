@@ -9,8 +9,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageCircle, User, Tag, TrendingUp, Star, Award, BookOpen, Zap, Users, Search, Filter, ChevronRight, Crown, Trophy, Target, Facebook, Twitter, Linkedin, Github, Mail, Phone, MapPin, Shield, ChevronLeft, Code, CheckCircle, BarChart3, Briefcase, Plus, ArrowRight, Clock, DollarSign, Lock, Globe, Sparkles, PenTool, Palette, Camera, Music, Video, FileText, ShoppingCart, Smartphone, Monitor, Database, Cloud } from 'lucide-react';
 import { ScrollReveal, StaggerContainer } from '../components/common/ScrollReveal';
 import { motion } from 'framer-motion';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export const HomePage: React.FC = () => {
+  usePageTitle('Home');
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [featuredPosts, setFeaturedPosts] = useState<Post[]>([]);
@@ -166,7 +168,7 @@ export const HomePage: React.FC = () => {
                   className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium mb-6"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Trusted by 10,000+ professionals
+                  Built for freelancers and clients
                 </motion.div>
                 
                 <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
@@ -1025,7 +1027,7 @@ export const HomePage: React.FC = () => {
                 <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">VL</span>
                 </div>
-                <span className="text-xl font-bold">GrowTogether</span>
+                <span className="text-xl font-bold">OpenWork</span>
               </div>
               <p className="text-gray-300 mb-6 leading-relaxed">
                 A quality-driven community focused on rewarding valuable contributions.
@@ -1113,14 +1115,14 @@ export const HomePage: React.FC = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                  <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                  <Link to="/terms" className="text-gray-300 hover:text-white transition-colors">
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1129,11 +1131,11 @@ export const HomePage: React.FC = () => {
           <div className="border-t border-gray-800 mt-8 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm mb-4 md:mb-0">
-                © 2024 GrowTogether. All rights reserved. Built with ❤️ for the developer community.
+                © 2024 OpenWork. All rights reserved. Built with ❤️ for the developer community.
               </div>
               <div className="flex items-center space-x-6 text-sm text-gray-400">
-                <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                <a href="#" className="hover:text-white transition-colors">Terms</a>
+                <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+                <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
                 <a href="#" className="hover:text-white transition-colors">Cookies</a>
               </div>
             </div>

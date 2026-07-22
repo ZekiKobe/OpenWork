@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, AuthResponse } from '../types/index';
 import { apiService } from '../services/api';
+import { connectSocket, disconnectSocket } from '../services/socket';
 
 interface AuthContextType {
   user: User | null;
@@ -26,6 +27,23 @@ export const useAuth = () => {
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+const SocketManager: React.FC = () => {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        connectSocket(token);
+      }
+    } else {
+      disconnectSocket();
+    }
+  }, [user]);
+
+  return null;
+};
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -105,6 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      disconnectSocket();
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
@@ -132,6 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
+      <SocketManager />
       {children}
     </AuthContext.Provider>
   );

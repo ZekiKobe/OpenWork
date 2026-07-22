@@ -109,7 +109,7 @@ export const AdminLoginPage: React.FC = () => {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@growtogether.com"
+                  placeholder="admin@openwork.com"
                   className="pl-10"
                   {...register('email')}
                 />

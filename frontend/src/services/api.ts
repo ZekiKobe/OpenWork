@@ -81,8 +81,8 @@ class ApiService {
     return response.data;
   }
 
-  async googleLogin(token: string): Promise<AuthResponse> {
-    const response = await this.api.post('/auth/google', { token });
+  async googleLogin(credential: string): Promise<AuthResponse> {
+    const response = await this.api.post('/auth/google', { credential });
     return response.data;
   }
 
@@ -112,6 +112,11 @@ class ApiService {
   async getUserById(userId: number): Promise<UserProfile> {
     const response = await this.api.get(`/users/id/${userId}`);
     return response.data.profile;
+  }
+
+  async searchUsers(query: string, page: number = 1, limit: number = 20): Promise<{ users: UserProfile[]; total: number; page: number; totalPages: number }> {
+    const response = await this.api.get('/users/search', { params: { q: query, page, limit } });
+    return response.data;
   }
 
   // Points endpoints
@@ -578,6 +583,11 @@ class ApiService {
     return response.data;
   }
 
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.api.post('/auth/change-password', { currentPassword, newPassword });
+    return response.data;
+  }
+
   // Job hire
   async hireFreelancer(jobId: number, applicationId: number): Promise<{ success: boolean; message: string; application: any; job: any }> {
     const response = await this.api.post(`/jobs/${jobId}/hire`, { application_id: applicationId });
@@ -587,6 +597,16 @@ class ApiService {
   // Payment endpoints
   async getWalletBalance(): Promise<{ success: boolean; balance: number; pending_balance: number; total_earned: number; total_withdrawn: number; available_balance: number; total_balance: number }> {
     const response = await this.api.get('/payments/wallet/balance');
+    return response.data;
+  }
+
+  async getPaymentsStatus(): Promise<{ success: boolean; paymentsEnabled: boolean }> {
+    const response = await this.api.get('/payments/status');
+    return response.data;
+  }
+
+  async createDeposit(amount: number): Promise<{ success: boolean; sessionId: string; url: string | null }> {
+    const response = await this.api.post('/payments/deposit', { amount });
     return response.data;
   }
 
@@ -617,6 +637,34 @@ class ApiService {
 
   async getWithdrawalHistory(page: number = 1, limit: number = 20): Promise<{ success: boolean; withdrawals: any[]; pagination: any }> {
     const response = await this.api.get('/payments/withdrawals', { params: { page, limit } });
+    return response.data;
+  }
+
+  async getMilestonesByJob(jobId: number): Promise<{ success: boolean; milestones: any[] }> {
+    const response = await this.api.get(`/milestones/job/${jobId}`);
+    return response.data;
+  }
+
+  async getMilestonesByContract(contractId: number): Promise<{ success: boolean; milestones: any[] }> {
+    const response = await this.api.get(`/milestones/contract/${contractId}`);
+    return response.data;
+  }
+
+  async createMilestone(data: {
+    job_id: number;
+    contract_id?: number;
+    title: string;
+    description: string;
+    amount: number;
+    order?: number;
+    due_date?: string;
+  }): Promise<{ success: boolean; milestone: any }> {
+    const response = await this.api.post('/milestones', data);
+    return response.data;
+  }
+
+  async updateMilestoneStatus(id: number, status: string): Promise<{ success: boolean; milestone: any }> {
+    const response = await this.api.put(`/milestones/${id}/status`, { status });
     return response.data;
   }
 
